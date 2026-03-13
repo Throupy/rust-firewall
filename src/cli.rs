@@ -59,7 +59,6 @@ pub async fn handle_client(socket: TcpStream, ruleset: Arc<Mutex<RuleSet>>) {
 
 pub async fn start_cli(rules: Arc<Mutex<RuleSet>>, port: u16) {
     let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).await.unwrap();
-    println!("CLI listening on port {}", port);
 
     loop {
         let (socket, _) = listener.accept().await.unwrap();
