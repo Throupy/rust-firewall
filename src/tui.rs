@@ -4,6 +4,7 @@ use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
     widgets::{Block, Borders, List, ListItem, Paragraph},
+    style::{Color, Style},
     Terminal,
 };
 
@@ -50,7 +51,16 @@ pub fn run_tui(app_state: Arc<Mutex<AppState>>) {
             let items: Vec<ListItem> = state.packets.iter()
                 .rev()
                 .take(50)
-                .map(|p| ListItem::new(p.as_str()))
+                .map(|p| {
+                    let style = if p.contains("MATCH") {
+                        Style::default().fg(Color::Red)
+                    } else if p.contains("[UNK]") {
+                        Style::default().fg(Color::Yellow)
+                    } else {
+                        Style::default().fg(Color::Green)
+                    };
+                    ListItem::new(p.as_str()).style(style)
+                })
                 .collect();
             let list = List::new(items)
                 .block(Block::default().borders(Borders::ALL).title("Packets"));

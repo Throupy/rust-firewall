@@ -8,11 +8,11 @@
       "protocol": "udp"
     },
     {
-      "name": "Block HTTPs Outbound",
-      "src_ip": null,
-      "dst_ip": null,
-      "dst_port": 443,
-      "protocol": "tcp"
+        "name": "Block TCP",
+        "src_ip": null,
+        "dst_ip": null,
+        "dst_port": null,
+        "protocol": "tcp"
     }
   ]
 }
