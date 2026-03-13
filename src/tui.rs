@@ -32,8 +32,9 @@ pub fn run_tui(app_state: Arc<Mutex<AppState>>) {
             let main_chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
-                    Constraint::Percentage(70),
-                    Constraint::Percentage(30),
+                    Constraint::Percentage(68),
+                    Constraint::Percentage(24),
+                    Constraint::Percentage(8),
                 ])
                 .split(f.area());
         
@@ -73,12 +74,23 @@ pub fn run_tui(app_state: Arc<Mutex<AppState>>) {
             );
             let stats_para = Paragraph::new(stats_text)
                 .block(Block::default().borders(Borders::ALL).title("Stats"));
-            f.render_widget(stats_para, bottom_chunks[0]);
+            f.render_widget(stats_para, bottom_chunks[1]);
 
-            // help pane
+            
+            let rules_text = state.rules.iter()
+                .take(10) // tkae 10 as max, otherwise won't fit... (until scrolling ;) )
+                .cloned()
+                .collect::<Vec<_>>() // <T> of _ means 'infer the type'
+                .join("\n");
+            
+            let rules_para = Paragraph::new(rules_text)
+                .block(Block::default().borders(Borders::ALL).title("Loaded Rules"));
+            f.render_widget(rules_para, bottom_chunks[0]);
+
             let help_para = Paragraph::new("q: quit")
-                .block(Block::default().borders(Borders::ALL).title("Help"));
-            f.render_widget(help_para, bottom_chunks[1]);
+            // using tmux so cna't see content.. stick in title for now. TODO
+                .block(Block::default().borders(Borders::ALL).title("q: quit"));
+            f.render_widget(help_para, main_chunks[2]);
 
         }).unwrap();
 

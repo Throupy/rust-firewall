@@ -38,6 +38,14 @@ async fn main() {
 
     let rules = Arc::new(Mutex::new(load_rules(RULES_FILE)));
     let app_state = Arc::new(Mutex::new(AppState::new()));
+
+    // need a block to limit .lock() on rules
+    {
+        let ruleset = rules.lock().unwrap();
+        let mut state = app_state.lock().unwrap();
+        // only need names to display.. for now
+        state.rules = ruleset.rules.iter().map(|r| r.name.clone()).collect()
+    }
     
     let cli_rules = Arc::clone(&rules);
     let capture_app_state = Arc::clone(&app_state);

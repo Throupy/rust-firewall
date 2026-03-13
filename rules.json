@@ -8,10 +8,10 @@
       "protocol": "udp"
     },
     {
-        "name": "Block TCP",
+        "name": "Block HTTPs",
         "src_ip": null,
         "dst_ip": null,
-        "dst_port": null,
+        "dst_port": 443,
         "protocol": "tcp"
     }
   ]
