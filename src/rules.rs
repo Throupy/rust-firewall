@@ -2,6 +2,10 @@ use std::{fs::File, io::BufReader, path::Path};
 
 use serde::{Deserialize, Serialize};
 
+use crate::headers::Packet;
+
+use crate::headers::Transport;
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RuleSet {
     pub rules: Vec<Rule>,
@@ -34,10 +38,22 @@ pub fn save_rule(path: &str, ruleset: &RuleSet) {
     std::fs::write(path, serialized).unwrap();
 }
 
-pub fn match_rules<'a>(ruleset: &'a RuleSet, src_ip: &str, dst_ip: &str, dst_port: u16, protocol: &str) -> Option<&'a Rule> {
+pub fn match_rules<'a>(ruleset: &'a RuleSet, packet: &Packet) -> Option<&'a Rule> {
+    // unpack the union enum data
+    let (dst_port, protocol): (Option<u16>, &str) = match packet.transport {
+        Transport::Tcp(_, dst_port) => (Some(dst_port), "tcp"),
+        Transport::Udp(_, dst_port) => (Some(dst_port), "udp"),
+        Transport::Unknown => (None, "unknown"),
+    };
+
+    // extract values from the packet obj
+    let src_ip = packet.src_ip.to_string();
+    let dst_ip = packet.dst_ip.to_string();
+
     for rule in &ruleset.rules {
+
         if let Some(rule_dst_port) = &rule.dst_port {
-            if rule_dst_port != &dst_port { continue; }
+            if Some(*rule_dst_port) != dst_port { continue; }
         }
         if let Some(rule_dst_ip) = &rule.dst_ip {
             if rule_dst_ip != &dst_ip { continue }
@@ -46,7 +62,7 @@ pub fn match_rules<'a>(ruleset: &'a RuleSet, src_ip: &str, dst_ip: &str, dst_por
             if rule_src_ip != &src_ip { continue }
         }
         if let Some(rule_protocol) = &rule.protocol {
-            if rule_protocol != &protocol { continue }
+            if rule_protocol.as_str() != protocol { continue }
         }
         return Some(rule);
     }
