@@ -12,3 +12,4 @@ A packet filter and mini-firewall written in Rust, targeting Linux. Built as an 
 - **Runtime CLI** - TCP server on port 7878 accepting live commands while capture runs
 - **Live TUI** - `ratatui`-based terminal interface with live packet log, stats, rule list, scrolling and pause/resume
 
+![example](./assets/packetfilter.png)
