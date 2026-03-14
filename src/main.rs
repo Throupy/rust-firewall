@@ -7,38 +7,19 @@ mod app;
 mod tui;
 mod nfqueue;
 
-use std::net::{Ipv4Addr};
 use std::sync::{Arc, Mutex};
 
-use chrono::Local;
-
-use nfqueue::{open_queue, run_queue_loop, SendableHandle};
-
-use headers::{
-    PROTO_TCP, PROTO_UDP, // constants
-    EthernetFrame, Ipv4Packet, UdpHeader, TcpHeader, Packet, // impl
-    Transport, // enums
-};
-
 use rules::{
-    load_rules, match_rules
+    load_rules
 };
-
-use logger::{
-    log_packet,
-};
-
-use capture::{open_raw_socket, capture_loop};
 
 use crate::app::AppState;
+use crate::nfqueue::{CallbackContext, QueueResources, SendableHandle};
 
 const RULES_FILE: &str = "rules.json";
-const LOG_FILE: &str = "packets.log";
 
 #[tokio::main]
 async fn main() {
-    println!("Welcome to the packet filter");
-
     let rules = Arc::new(Mutex::new(load_rules(RULES_FILE)));
     let app_state = Arc::new(Mutex::new(AppState::new()));
 
@@ -51,53 +32,25 @@ async fn main() {
     }
     
     let cli_rules = Arc::clone(&rules);
-    let capture_app_state = Arc::clone(&app_state);
     tokio::spawn(async move {
         cli::start_cli(cli_rules, 7878).await;
     });
 
-    let (connection_handle, _queue_handle, queue_fd) = nfqueue::open_queue();
-    let sendable = nfqueue::SendableHandle(connection_handle);
-    std::thread::spawn(move || {
-        // nfqueue for enforcement
-        // might replace capture.rs with nfqueue.rs - get packet bytes from queue
-        // parse, match, and issue verdict, that way I will onoly have
-        // 1 pipeline.
-        nfqueue::run_queue_loop(sendable, queue_fd);
-    });
+    let callback_context = CallbackContext {
+        ruleset: Arc::clone(&rules),
+        app_state: Arc::clone(&app_state),
+    };
+
+    let queue_resources: QueueResources = nfqueue::open_queue(callback_context);
+    let sendable = nfqueue::SendableHandle(queue_resources.connection.0);
+    let cleanup_handle = nfqueue::SendableHandle(queue_resources.connection.0); // second handle for cleanup
 
     std::thread::spawn(move || {
-        // raw sock for passively sniffing traffic
-        let fd = open_raw_socket();
-
-        capture_loop(fd, move |data| {
-            // if the packet can be parsed
-            if let Some(packet) = Packet::parse(data) {
-    
-                let matched = {
-                    let ruleset = rules.lock().unwrap();
-    
-                    match_rules(&ruleset, &packet)
-                        .map(|r| format!(" MATCH: {}", r.name))
-                        .unwrap_or_default()
-                };
-    
-                //println!("{} {}", packet, matched);
-                // update app state
-                let mut state = capture_app_state.lock().unwrap();
-                state.total += 1;
-                if !matched.is_empty() { state.matched += 1; }
-                state.packets.push(format!("{}{}", packet, matched));
-                
-    
-                // construct timestamp for outfile
-                //let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
-                //let log_message = format!("{} {}{}", timestamp, packet, matched);
-                //log_packet(LOG_FILE, &log_message)
-            }
-        });
+        nfqueue::run_queue_loop(sendable, queue_resources.file_descriptor);
     });
 
-    tui::run_tui(app_state);
+    tui::run_tui(Arc::clone(&app_state));
+    // reached when users pressed q
+    nfqueue::close_queue(cleanup_handle, queue_resources.queue_handle);
 }   
 

@@ -35,6 +35,25 @@ impl Packet {
 
         Some(Packet{ src_ip, dst_ip, transport })
     }
+
+    // when eth header is stripped off (in nfqueue)
+    pub fn parse_ip(data: &[u8]) -> Option<Packet> {
+        let ipv4_packet = Ipv4Packet::parse(data)?; // ret None if this is None
+        let src_ip = Ipv4Addr::from(ipv4_packet.src_ip);
+        let dst_ip = Ipv4Addr::from(ipv4_packet.dst_ip);
+
+        let transport = match ipv4_packet.protocol {
+            PROTO_TCP => TcpHeader::parse(&data[20..])
+                .map(|tcp| Transport::Tcp(tcp.src_port, tcp.dst_port))
+                .unwrap_or(Transport::Unknown),
+            PROTO_UDP => UdpHeader::parse(&data[20..])
+                .map(|udp| Transport::Udp(udp.src_port, udp.dst_port))
+                .unwrap_or(Transport::Unknown),
+            _ => Transport::Unknown,
+        };
+        
+        Some(Packet { src_ip, dst_ip, transport })
+    }
 }
 
 // display 'trait' for the Packet struct

@@ -28,6 +28,7 @@ pub fn run_tui(app_state: Arc<Mutex<AppState>>) {
 
     loop {
         terminal.draw(|f| {
+
             // layout, split screen into 3 vertical chunks (for now... might change)
             let main_chunks = Layout::default()
                 .direction(Direction::Vertical)
