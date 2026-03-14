@@ -22,9 +22,10 @@ sudo python3 -m http.server 80
 # verify it works b4 running firewall
 curl http://localhost
 
-# add iptables rule targeting loopback to go to queue for app digestion
-# note this does 80/tcp only
-sudo iptables -A OUTPUT -o lo -p tcp --dport 80 -j NFQUEUE --queue-num 0 --queue-bypass
+# add iptables rules targeting loopback to go to queue for app digestion
+# covers 80/tcp, 5000/tcp, 8080/tcp on both directions
+sudo iptables -A OUTPUT -o lo -p tcp -m multiport --dports 80,5000,8080 -j NFQUEUE --queue-num 0 --queue-bypass
+sudo iptables -A INPUT -i lo -p tcp -m multiport --dports 80,5000,8080 -j NFQUEUE --queue-num 0 --queue-bypass
 
 # make sure rules r correct and then start firewall, then
 curl http://localhost

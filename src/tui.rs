@@ -65,7 +65,7 @@ pub fn run_tui(app_state: Arc<Mutex<AppState>>) {
             // packet log pane
             let items: Vec<ListItem> = state.packets[start..end].iter()
                 .map(|p| {
-                    let style = if p.contains("MATCH") {
+                    let style = if p.contains("BLOCK") {
                         Style::default().fg(Color::Red)
                     } else if p.contains("[UNK]") {
                         Style::default().fg(Color::Yellow)
