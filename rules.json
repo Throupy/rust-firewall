@@ -1,25 +1,5 @@
 {
   "rules": [
-    {
-      "name": "Block Google DNS",
-      "src_ip": null,
-      "dst_ip": "8.8.8.8",
-      "dst_port": 53,
-      "protocol": "udp"
-    },
-    {
-        "name": "Block HTTPs",
-        "src_ip": null,
-        "dst_ip": null,
-        "dst_port": 443,
-        "protocol": "tcp"
-    },
-    {
-        "name": "Block HTTP on dummy0 interface",
-        "src_ip": null,
-        "dst_ip": null,
-        "dst_port": 80,
-        "protocol": "tcp"
-    }
+
   ]
 }

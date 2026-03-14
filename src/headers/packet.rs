@@ -1,6 +1,8 @@
 use std::net::Ipv4Addr;
 use std::fmt;
 
+use crate::headers::tcp::flags_to_string;
+
 use super::transport::Transport;
 use super::{PROTO_TCP, PROTO_UDP};
 use super::ipv4::Ipv4Packet;
@@ -25,7 +27,7 @@ impl Packet {
     
         let transport: Transport = match ipv4_packet.protocol {
             PROTO_TCP => TcpHeader::parse(&data[34..])
-                .map(|tcp| Transport::Tcp(tcp.src_port, tcp.dst_port))
+                .map(|tcp| Transport::Tcp(tcp.src_port, tcp.dst_port, tcp.flags))
                 .unwrap_or(Transport::Unknown),
             PROTO_UDP => UdpHeader::parse(&data[34..])
                 .map(|udp| Transport::Udp(udp.src_port, udp.dst_port))
@@ -44,7 +46,7 @@ impl Packet {
 
         let transport = match ipv4_packet.protocol {
             PROTO_TCP => TcpHeader::parse(&data[20..])
-                .map(|tcp| Transport::Tcp(tcp.src_port, tcp.dst_port))
+                .map(|tcp| Transport::Tcp(tcp.src_port, tcp.dst_port, tcp.flags))
                 .unwrap_or(Transport::Unknown),
             PROTO_UDP => UdpHeader::parse(&data[20..])
                 .map(|udp| Transport::Udp(udp.src_port, udp.dst_port))
@@ -64,8 +66,10 @@ impl fmt::Display for Packet {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // [PROTO] SRC_IP:SRC_PORT -> DST_IP:DST_PORT 
         match &self.transport {
-            Transport::Tcp(src_port, dst_port) => 
-                write!(f, "[TCP] {}:{} -> {}:{}", self.src_ip, src_port, self.dst_ip, dst_port),
+            Transport::Tcp(src_port, dst_port, flags) => {
+                let flag_str = flags_to_string(*flags);
+                write!(f, "[TCP] {}:{} -> {}:{} [{}]", self.src_ip, src_port, self.dst_ip, dst_port, flag_str)
+            },
             
             Transport::Udp(src_port, dst_port) => 
                 write!(f, "[UDP] {}:{} -> {}:{}", self.src_ip, src_port, self.dst_ip, dst_port),

@@ -242,7 +242,7 @@ pub fn open_queue(callback_context: CallbackContext) -> (QueueResources) {
 
 // read loop, similar to capture.rs but reading from the nfqeue fs instead of the raw socket fd
 pub fn run_queue_loop(connection_handle: SendableHandle, queue_fd: c_int) {
-    let mut buf = [0u8; MAX_ETHERNET_FRAME_SIZE * 2];
+    let mut buf = [0u8; MAX_ETHERNET_FRAME_SIZE * 4];
     loop {
         unsafe {
             let retval: isize = libc::recv(
@@ -251,7 +251,7 @@ pub fn run_queue_loop(connection_handle: SendableHandle, queue_fd: c_int) {
                 buf.len(),  // buffer size - no buf overflows here
                 0 // 0 - blocking - recv will wait til a packet arrives
             ) as isize;
-            if retval == -1 { panic!("Recv() failed"); }
+            if retval == -1 { continue; } // dont block all traffic when overwhelmed
             nfq_handle_packet(
                 connection_handle.0, 
                 buf.as_mut_ptr() as *mut c_void,

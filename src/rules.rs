@@ -41,7 +41,7 @@ pub fn save_rule(path: &str, ruleset: &RuleSet) {
 pub fn match_rules<'a>(ruleset: &'a RuleSet, packet: &Packet) -> Option<&'a Rule> {
     // unpack the union enum data
     let (dst_port, protocol): (Option<u16>, &str) = match packet.transport {
-        Transport::Tcp(_, dst_port) => (Some(dst_port), "tcp"),
+        Transport::Tcp(_, dst_port, _) => (Some(dst_port), "tcp"),
         Transport::Udp(_, dst_port) => (Some(dst_port), "udp"),
         Transport::Unknown => (None, "unknown"),
     };
