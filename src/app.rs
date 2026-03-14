@@ -3,6 +3,9 @@ pub struct AppState {
     pub matched: u64, // totla rule matches
     pub total: u64, // total pkts seen
     pub rules: Vec<String>,
+    pub scroll: u16,
+    pub paused: bool,
+    pub pause_anchor: usize, // pkt(s) to pause on
 }
 
 impl AppState {
@@ -12,6 +15,9 @@ impl AppState {
             matched: 0,
             total: 0,
             rules: Vec::new(),
+            scroll: 0,
+            paused: false,
+            pause_anchor: 0,
         }
     }
 }
