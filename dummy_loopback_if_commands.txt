@@ -1,0 +1,16 @@
+# don't want to test on my interface as will lose inet access until sudo iptables -F
+# create a dummy interface using
+sudo ip link add dummy0 type dummy
+sudo ip link set dummy0 up
+sudo ip addr add 10.99.0.1/24 dev dummy0
+
+# target nfqueue only on that IF
+sudo iptables -A INPUT -i dummy0 -j NFQUEUE --queue-num 0 --queue-bypass
+sudo iptables -A OUTPUT -o dummy0 -j NFQUEUE --queue-num 0 -queue-bypass
+
+# gen test traffic (icmp not supported yet so don't bother ping)
+curl --interface dummy0 http://10.99.0.1
+
+# clear rules
+sudo ip link delete dummy0
+sudo iptables -F

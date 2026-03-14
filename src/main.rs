@@ -5,11 +5,14 @@ mod cli;
 mod capture;
 mod app;
 mod tui;
+mod nfqueue;
 
 use std::net::{Ipv4Addr};
 use std::sync::{Arc, Mutex};
 
 use chrono::Local;
+
+use nfqueue::{open_queue, run_queue_loop, SendableHandle};
 
 use headers::{
     PROTO_TCP, PROTO_UDP, // constants
@@ -53,7 +56,18 @@ async fn main() {
         cli::start_cli(cli_rules, 7878).await;
     });
 
+    let (connection_handle, _queue_handle, queue_fd) = nfqueue::open_queue();
+    let sendable = nfqueue::SendableHandle(connection_handle);
     std::thread::spawn(move || {
+        // nfqueue for enforcement
+        // might replace capture.rs with nfqueue.rs - get packet bytes from queue
+        // parse, match, and issue verdict, that way I will onoly have
+        // 1 pipeline.
+        nfqueue::run_queue_loop(sendable, queue_fd);
+    });
+
+    std::thread::spawn(move || {
+        // raw sock for passively sniffing traffic
         let fd = open_raw_socket();
 
         capture_loop(fd, move |data| {

@@ -1,4 +1,4 @@
-const MAX_ETHERNET_FRAME_SIZE: usize = 65535;
+pub const MAX_ETHERNET_FRAME_SIZE: usize = 65535;
 
 pub fn open_raw_socket() -> i32 {
     unsafe {
